@@ -10,7 +10,6 @@ server/uploads/*
 
 # Electron 빌드 결과물
 dist-desktop/
-electron/src/
 
 # 클라이언트/플레이어 빌드 캐시
 client/dist/

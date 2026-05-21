@@ -9,7 +9,6 @@ const isDev = !app.isPackaged;
 let mainWindow = null;
 let tray = null;
 
-// ─── 로컬 IP 목록 조회 ───────────────────────────────────────
 function getLocalIPs() {
   const interfaces = os.networkInterfaces();
   const ips = [];
@@ -23,7 +22,6 @@ function getLocalIPs() {
   return ips;
 }
 
-// ─── 서버 시작 ───────────────────────────────────────────────
 function startServer() {
   const userData = app.getPath('userData');
   const uploadsDir = path.join(userData, 'uploads');
@@ -46,13 +44,22 @@ function startServer() {
     NODE_ENV: isDev ? 'development' : 'production',
   });
 
+  // 패키징된 앱에서 extraResources/server 의 require()가
+  // app.asar/node_modules 를 찾을 수 있도록 NODE_PATH 설정
+  if (!isDev) {
+    const asarNodeModules = path.join(__dirname, 'node_modules');
+    const asarUnpackedNodeModules = asarNodeModules.replace('app.asar', 'app.asar.unpacked');
+    process.env.NODE_PATH = [asarNodeModules, asarUnpackedNodeModules].join(path.delimiter);
+    require('module').Module._initPaths();
+  }
+
   const serverEntry = isDev
     ? path.join(__dirname, '../server/index.js')
-    : path.join(__dirname, 'src/server/index.js');
+    : path.join(process.resourcesPath, 'server', 'index.js');
 
   try {
     require(serverEntry);
-    console.log('서버 모듈 로드 완료');
+    console.log('서버 모듈 로드 완료:', serverEntry);
   } catch (err) {
     console.error('서버 시작 실패:', err);
     dialog.showErrorBox(
@@ -62,7 +69,6 @@ function startServer() {
   }
 }
 
-// ─── 서버 준비 대기 ──────────────────────────────────────────
 async function waitForServer(maxWait = 15000) {
   const start = Date.now();
   while (Date.now() - start < maxWait) {
@@ -83,7 +89,6 @@ async function waitForServer(maxWait = 15000) {
   return false;
 }
 
-// ─── 로딩 화면 HTML ──────────────────────────────────────────
 function getLoadingHTML() {
   return `<!DOCTYPE html>
 <html>
@@ -116,7 +121,6 @@ function getLoadingHTML() {
 </html>`;
 }
 
-// ─── 메인 윈도우 생성 ────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -133,37 +137,26 @@ function createWindow() {
     show: false,
   });
 
-  // 로딩 화면 표시
   mainWindow.loadURL(
     `data:text/html;charset=utf-8,${encodeURIComponent(getLoadingHTML())}`
   );
   mainWindow.show();
 
-  // 서버 준비되면 관리 UI 로드
   waitForServer().then(ready => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.loadURL('http://localhost:4000');
-    if (!ready) {
-      console.warn('서버 준비 시간 초과, 강제 로드');
-    }
+    if (!ready) console.warn('서버 준비 시간 초과, 강제 로드');
   });
 
-  // 닫기 버튼 → 트레이로 숨김
   mainWindow.on('close', e => {
     if (!app.isQuitting) {
       e.preventDefault();
       mainWindow.hide();
-      tray?.displayBalloon?.({
-        title: '사이니지 관리 시스템',
-        content: '시스템 트레이에서 계속 실행 중입니다.',
-      });
     }
   });
 }
 
-// ─── 시스템 트레이 ───────────────────────────────────────────
 function createTray() {
-  // 간단한 내장 아이콘 (16x16 PNG base64)
   const iconBase64 =
     'data:image/png;base64,' +
     'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAA' +
@@ -176,87 +169,41 @@ function createTray() {
   const localIPs = getLocalIPs();
 
   function buildPlayerMenu() {
-    if (localIPs.length === 0) {
-      return [{ label: 'IP 주소를 찾을 수 없음', enabled: false }];
-    }
+    if (localIPs.length === 0) return [{ label: 'IP 주소를 찾을 수 없음', enabled: false }];
     const ip = localIPs[0];
-    const devices = [
-      { id: 'tv-a', label: 'TV-A (1층 좌측)' },
-      { id: 'tv-b', label: 'TV-B (1층 우측)' },
-      { id: 'kiosk', label: '키오스크' },
+    return [
+      { label: `TV-A:    http://${ip}:4000/player?device=tv-a`,    click: () => clipboard.writeText(`http://${ip}:4000/player?device=tv-a`) },
+      { label: `TV-B:    http://${ip}:4000/player?device=tv-b`,    click: () => clipboard.writeText(`http://${ip}:4000/player?device=tv-b`) },
+      { label: `키오스크: http://${ip}:4000/player?device=kiosk`, click: () => clipboard.writeText(`http://${ip}:4000/player?device=kiosk`) },
     ];
-    return devices.map(d => ({
-      label: `${d.label}: http://${ip}:4000/player?device=${d.id}`,
-      click: () => clipboard.writeText(`http://${ip}:4000/player?device=${d.id}`),
-    }));
   }
 
   const menu = Menu.buildFromTemplate([
-    {
-      label: '📺 관리자 화면 열기',
-      click: () => {
-        mainWindow?.show();
-        mainWindow?.focus();
-      },
-    },
-    {
-      label: '🌐 브라우저에서 열기',
-      click: () => shell.openExternal('http://localhost:4000'),
-    },
+    { label: '📺 관리자 화면 열기', click: () => { mainWindow?.show(); mainWindow?.focus(); } },
+    { label: '🌐 브라우저에서 열기', click: () => shell.openExternal('http://localhost:4000') },
     { type: 'separator' },
-    {
-      label: '📋 플레이어 URL 복사 (TV/키오스크)',
-      submenu: buildPlayerMenu(),
-    },
-    {
-      label: `🖧 서버 주소: ${localIPs[0] ? `http://${localIPs[0]}:4000` : 'localhost:4000'}`,
-      enabled: false,
-    },
+    { label: '📋 플레이어 URL 복사 (클릭하면 복사)', submenu: buildPlayerMenu() },
+    { label: `🖧 서버: ${localIPs[0] ? `http://${localIPs[0]}:4000` : 'localhost:4000'}`, enabled: false },
     { type: 'separator' },
-    {
-      label: '❌ 종료',
-      click: () => {
-        app.isQuitting = true;
-        app.quit();
-      },
-    },
+    { label: '❌ 종료', click: () => { app.isQuitting = true; app.quit(); } },
   ]);
 
   tray.setContextMenu(menu);
-  tray.setToolTip('사이니지 관리 시스템\n(우클릭으로 메뉴 열기)');
-  tray.on('double-click', () => {
-    mainWindow?.show();
-    mainWindow?.focus();
-  });
+  tray.setToolTip('사이니지 관리 시스템');
+  tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
 }
 
-// ─── 앱 초기화 ───────────────────────────────────────────────
 app.whenReady().then(() => {
-  // 중복 실행 방지
   const gotLock = app.requestSingleInstanceLock();
-  if (!gotLock) {
-    app.quit();
-    return;
-  }
+  if (!gotLock) { app.quit(); return; }
 
-  app.on('second-instance', () => {
-    mainWindow?.show();
-    mainWindow?.focus();
-  });
+  app.on('second-instance', () => { mainWindow?.show(); mainWindow?.focus(); });
 
   startServer();
   createWindow();
   createTray();
 });
 
-app.on('before-quit', () => {
-  app.isQuitting = true;
-});
-
-app.on('window-all-closed', () => {
-  // 트레이에서 계속 실행
-});
-
-app.on('activate', () => {
-  mainWindow?.show();
-});
+app.on('before-quit', () => { app.isQuitting = true; });
+app.on('window-all-closed', () => { /* 트레이에서 계속 실행 */ });
+app.on('activate', () => { mainWindow?.show(); });
