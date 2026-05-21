@@ -44,18 +44,9 @@ function startServer() {
     NODE_ENV: isDev ? 'development' : 'production',
   });
 
-  // 패키징된 앱에서 extraResources/server 의 require()가
-  // app.asar/node_modules 를 찾을 수 있도록 NODE_PATH 설정
-  if (!isDev) {
-    const asarNodeModules = path.join(__dirname, 'node_modules');
-    const asarUnpackedNodeModules = asarNodeModules.replace('app.asar', 'app.asar.unpacked');
-    process.env.NODE_PATH = [asarNodeModules, asarUnpackedNodeModules].join(path.delimiter);
-    require('module').Module._initPaths();
-  }
-
   const serverEntry = isDev
     ? path.join(__dirname, '../server/index.js')
-    : path.join(process.resourcesPath, 'server', 'index.js');
+    : path.join(__dirname, 'server', 'index.js');
 
   try {
     require(serverEntry);
