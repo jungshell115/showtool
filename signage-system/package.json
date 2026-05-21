@@ -1,0 +1,17 @@
+{
+  "name": "signage-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "server": "cd server && node index.js",
+    "client": "cd client && npm run dev",
+    "player": "cd player && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run player\"",
+    "install:all": "cd server && npm install && cd ../client && npm install && cd ../player && npm install",
+    "build:client": "cd client && npm run build",
+    "build:player": "cd player && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
