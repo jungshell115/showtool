@@ -8,9 +8,9 @@
   "scripts": {
     "start": "electron .",
     "prebuild": "node scripts/prebuild.js",
-    "build:win": "electron-builder --win --publish never",
-    "build:win-zip": "electron-builder --win --config.win.target=zip --publish never",
-    "build:linux": "electron-builder --linux --publish never",
+    "build:win": "node scripts/prebuild.js && electron-builder --win --publish never",
+    "build:win-zip": "node scripts/prebuild.js && electron-builder --win --config.win.target=zip --publish never",
+    "build:linux": "node scripts/prebuild.js && electron-builder --linux --publish never",
     "install-deps": "npm install && electron-builder install-app-deps"
   },
   "dependencies": {
