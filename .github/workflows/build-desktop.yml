@@ -1,0 +1,146 @@
+name: 데스크탑 앱 빌드
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  build-windows:
+    name: Windows 인스톨러 빌드
+    runs-on: windows-latest
+
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            signage-system/server/package-lock.json
+            signage-system/client/package-lock.json
+            signage-system/player/package-lock.json
+            signage-system/electron/package-lock.json
+
+      - name: 서버 의존성 설치
+        working-directory: signage-system/server
+        run: npm ci
+
+      - name: 클라이언트 의존성 설치
+        working-directory: signage-system/client
+        run: npm ci
+
+      - name: 플레이어 의존성 설치
+        working-directory: signage-system/player
+        run: npm ci
+
+      - name: Electron 의존성 설치 및 네이티브 모듈 리빌드
+        working-directory: signage-system/electron
+        run: npm run install-deps
+
+      - name: Windows 인스톨러 빌드 (.exe + .zip)
+        working-directory: signage-system/electron
+        run: npm run build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: 빌드 결과물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: signage-windows-installer
+          path: |
+            signage-system/dist-desktop/*.exe
+            signage-system/dist-desktop/*.zip
+          retention-days: 30
+
+  build-linux:
+    name: Linux AppImage 빌드
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 시스템 패키지 설치
+        run: sudo apt-get install -y libarchive-tools
+
+      - name: 서버 의존성 설치
+        working-directory: signage-system/server
+        run: npm ci
+
+      - name: 클라이언트 의존성 설치
+        working-directory: signage-system/client
+        run: npm ci
+
+      - name: 플레이어 의존성 설치
+        working-directory: signage-system/player
+        run: npm ci
+
+      - name: Electron 의존성 설치
+        working-directory: signage-system/electron
+        run: npm run install-deps
+
+      - name: Linux AppImage 빌드
+        working-directory: signage-system/electron
+        run: npm run build:linux
+
+      - name: 빌드 결과물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: signage-linux-appimage
+          path: signage-system/dist-desktop/*.AppImage
+          retention-days: 30
+
+  # 태그 푸시 시 GitHub Release 자동 생성
+  release:
+    name: GitHub Release 생성
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux]
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Windows 결과물 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: signage-windows-installer
+          path: ./artifacts/windows
+
+      - name: Linux 결과물 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: signage-linux-appimage
+          path: ./artifacts/linux
+
+      - name: GitHub Release 생성
+        uses: softprops/action-gh-release@v1
+        with:
+          name: 사이니지 관리 시스템 ${{ github.ref_name }}
+          body: |
+            ## 설치 방법
+
+            ### Windows
+            - `사이니지 관리 시스템-Setup-*.exe` 다운로드 후 실행 (권장)
+            - 또는 `사이니지 관리 시스템-*-win.zip` 다운로드 후 압축 해제 후 `.exe` 실행
+
+            ### Linux
+            - `사이니지 관리 시스템-*.AppImage` 다운로드
+            - 실행 권한 부여: `chmod +x *.AppImage`
+            - 실행: `./사이니지\ 관리\ 시스템-*.AppImage`
+
+            ## 기본 계정
+            - 사용자: `admin`
+            - 비밀번호: `admin1234` (최초 로그인 후 변경 권장)
+          files: |
+            ./artifacts/windows/*
+            ./artifacts/linux/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

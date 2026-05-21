@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// 프로덕션: window.location.origin → TV가 192.168.x.x:4000으로 접속해도 자동 인식
+const API_BASE = import.meta.env.VITE_API_URL || window.location.origin;
 const POLL_INTERVAL = 30000;
 
 function useDeviceId() {

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// 개발: VITE_API_URL (localhost:4000)
+// 프로덕션(Express 서빙): 빈 문자열 → 상대 경로 → 자동으로 같은 호스트
+export const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
@@ -25,5 +27,4 @@ api.interceptors.response.use(
   }
 );
 
-export { API_BASE };
 export default api;

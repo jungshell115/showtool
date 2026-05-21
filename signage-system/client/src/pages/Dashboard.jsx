@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import api, { API_BASE } from '../api/client';
 
-const SOCKET_URL = API_BASE;
+// 프로덕션에서는 window.location.origin 사용 (TV → 서버IP:4000으로 접속 시에도 동작)
+const SOCKET_URL = API_BASE || window.location.origin;
 
 function DeviceCard({ device, onlineStatus, nowPlaying }) {
   const isOnline = onlineStatus[device.id];

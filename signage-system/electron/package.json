@@ -1,0 +1,83 @@
+{
+  "name": "signage-desktop",
+  "version": "1.0.0",
+  "description": "디지털 사이니지 관리 시스템",
+  "author": "Signage Admin",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prebuild": "node scripts/prebuild.js",
+    "build:win": "electron-builder --win --publish never",
+    "build:win-zip": "electron-builder --win --config.win.target=zip --publish never",
+    "build:linux": "electron-builder --linux --publish never",
+    "install-deps": "npm install && electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "better-sqlite3": "^9.4.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.7.4",
+    "cors": "^2.8.5",
+    "sharp": "^0.33.2",
+    "fluent-ffmpeg": "^2.1.2",
+    "dotenv": "^16.4.4"
+  },
+  "devDependencies": {
+    "electron": "^29.1.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "kr.ccon.signage-system",
+    "productName": "사이니지 관리 시스템",
+    "copyright": "Copyright © 2025",
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/sharp/**",
+      "**/node_modules/@img/**"
+    ],
+    "directories": {
+      "output": "../dist-desktop"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../client/dist",
+        "to": "client-dist"
+      },
+      {
+        "from": "../player/dist",
+        "to": "player-dist"
+      }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "zip", "arch": ["x64"] }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "사이니지 관리 시스템",
+      "runAfterFinish": true,
+      "installerLanguages": ["ko_KR", "en_US"],
+      "language": "1042"
+    }
+  }
+}

@@ -7,7 +7,8 @@ const sharp = require('sharp');
 const { getDb } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
+// Electron 환경에서는 UPLOADS_DIR 환경변수로 userData 경로 주입
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
 const THUMBNAILS_DIR = path.join(UPLOADS_DIR, 'thumbnails');
 
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
