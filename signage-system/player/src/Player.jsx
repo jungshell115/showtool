@@ -54,11 +54,13 @@ function MediaItem({ item, onEnded, isActive }) {
   );
 }
 
+const FADE_MS = 600;
+
 export default function Player() {
   const deviceId = useDeviceId();
   const [items, setItems] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [fade, setFade] = useState(true);
+  const [fade, setFade] = useState(false);
   const [emergency, setEmergency] = useState(null);
   const [emergencyFade, setEmergencyFade] = useState(false);
   const [status, setStatus] = useState('연결 중...');
@@ -80,6 +82,7 @@ export default function Player() {
       if (data.items && data.items.length > 0) {
         setItems(data.items);
         setStatus('재생 중');
+        setFade(true);
       } else {
         setStatus('콘텐츠 없음');
       }
@@ -153,8 +156,8 @@ export default function Player() {
     setFade(false);
     setTimeout(() => {
       setCurrentIndex(prev => (prev + 1) % items.length);
-      setFade(true);
-    }, 400);
+      requestAnimationFrame(() => requestAnimationFrame(() => setFade(true)));
+    }, FADE_MS);
   }
 
   const current = items[currentIndex];
@@ -167,8 +170,11 @@ export default function Player() {
       {/* 메인 플레이어 */}
       {current ? (
         <div
-          className="absolute inset-0 transition-opacity duration-400"
-          style={{ opacity: fade ? 1 : 0 }}
+          className="absolute inset-0"
+          style={{
+            opacity: fade ? 1 : 0,
+            transition: `opacity ${FADE_MS}ms ease-in-out`,
+          }}
         >
           <MediaItem
             key={`${current.id}-${currentIndex}`}
