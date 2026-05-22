@@ -145,7 +145,13 @@ app.delete('/api/devices/emergency-cancel/:id', require('./middleware/auth').aut
 // ─── 정적 파일 서빙 (Electron/Production용) ───────────────────
 // 플레이어 앱 서빙 (/player/*)
 if (PLAYER_DIST && fs.existsSync(PLAYER_DIST)) {
+  // /player/assets/... 경로 (새 빌드)
   app.use('/player', express.static(PLAYER_DIST));
+  // /assets/... 절대 경로로 빌드된 구버전 EXE 호환
+  const playerAssetsDir = path.join(PLAYER_DIST, 'assets');
+  if (fs.existsSync(playerAssetsDir)) {
+    app.use('/assets', express.static(playerAssetsDir));
+  }
   app.get('/player*', (req, res) => {
     res.sendFile(path.join(PLAYER_DIST, 'index.html'));
   });
