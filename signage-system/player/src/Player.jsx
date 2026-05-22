@@ -69,6 +69,19 @@ export default function Player() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState('연결 중...');
 
+  // 전체화면 자동 전환 (삼성TV 브라우저 포함)
+  useEffect(() => {
+    function goFullscreen() {
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+      if (req) req.call(el).catch(() => {});
+    }
+    goFullscreen();
+    // 일부 TV 브라우저는 사용자 인터랙션 후에만 허용
+    document.addEventListener('click', goFullscreen, { once: true });
+    return () => document.removeEventListener('click', goFullscreen);
+  }, []);
+
   // Double-buffer: two slots alternate between current and preloading-next
   const [slotData, setSlotData] = useState([null, null]);
   const [slotActive, setSlotActive] = useState([false, false]);
