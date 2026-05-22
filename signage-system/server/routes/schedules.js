@@ -3,6 +3,13 @@ const router = express.Router();
 const { getDb } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 
+let _io = null;
+function setIo(io) { _io = io; }
+
+function notifyDevice(deviceId) {
+  if (_io) _io.to(`device:${deviceId}`).emit('schedule-update', { deviceId });
+}
+
 function getCurrentSchedule(deviceId) {
   const db = getDb();
   const now = new Date();
@@ -116,6 +123,7 @@ router.post('/', authenticateToken, (req, res) => {
     WHERE s.id = ?
   `).get(result.lastInsertRowid);
 
+  notifyDevice(schedule.device_id);
   res.status(201).json(schedule);
 });
 
@@ -156,6 +164,7 @@ router.put('/:id', authenticateToken, (req, res) => {
     WHERE s.id = ?
   `).get(req.params.id);
 
+  notifyDevice(updated.device_id);
   res.json(updated);
 });
 
@@ -166,6 +175,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
   if (!schedule) return res.status(404).json({ error: '스케줄을 찾을 수 없습니다' });
 
   db.prepare('DELETE FROM schedules WHERE id = ?').run(req.params.id);
+  notifyDevice(schedule.device_id);
   res.json({ message: '스케줄이 삭제되었습니다' });
 });
 
@@ -175,4 +185,4 @@ router.get('/current/:deviceId', (req, res) => {
   res.json(result);
 });
 
-module.exports = { router, getCurrentSchedule };
+module.exports = { router, getCurrentSchedule, setIo };

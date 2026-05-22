@@ -5,6 +5,7 @@ const navItems = [
   { to: '/contents', label: '콘텐츠', icon: '🖼️' },
   { to: '/playlists', label: '플레이리스트', icon: '▶️' },
   { to: '/schedule', label: '스케줄', icon: '📅' },
+  { to: '/settings', label: '설정', icon: '⚙️' },
 ];
 
 export default function Layout({ children }) {

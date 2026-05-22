@@ -5,12 +5,14 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 const { initDb, getDb } = require('./db/database');
 const authRouter = require('./routes/auth');
 const contentsRouter = require('./routes/contents');
-const { router: schedulesRouter } = require('./routes/schedules');
+const { router: schedulesRouter, setIo } = require('./routes/schedules');
 const devicesRouter = require('./routes/devices');
+const backupRouter = require('./routes/backup');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,14 +36,25 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 로그인 브루트포스 방어 (15분에 10회)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: '로그인 시도 횟수를 초과했습니다. 15분 후 다시 시도하세요.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // 업로드 정적 파일
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 // API 라우터
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/contents', contentsRouter);
 app.use('/api/schedules', schedulesRouter);
 app.use('/api/devices', devicesRouter);
+app.use('/api/backup', backupRouter);
 
 // 헬스체크
 app.get('/api/health', (req, res) => {
@@ -166,6 +179,9 @@ if (CLIENT_DIST && fs.existsSync(CLIENT_DIST)) {
   });
   console.log(`클라이언트 정적 파일: ${CLIENT_DIST}`);
 }
+
+// schedules 라우터에 io 연결 (실시간 스케줄 푸시용)
+setIo(io);
 
 // ─── DB 초기화 및 서버 시작 ───────────────────────────────────
 initDb();

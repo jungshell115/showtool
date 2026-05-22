@@ -112,6 +112,10 @@ export default function Player() {
       }, 50);
     });
 
+    socket.on('schedule-update', ({ deviceId: updatedDevice }) => {
+      if (updatedDevice === deviceId) fetchSchedule();
+    });
+
     socket.on('emergency-cancel', ({ id }) => {
       setEmergency(prev => {
         if (prev?.id === id) {

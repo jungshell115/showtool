@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Contents from './pages/Contents';
 import Playlists from './pages/Playlists';
 import Schedule from './pages/Schedule';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 
 function RequireAuth({ children }) {
@@ -20,6 +21,7 @@ function AdminApp() {
         <Route path="/contents" element={<Contents />} />
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/schedule" element={<Schedule />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Layout>
   );
