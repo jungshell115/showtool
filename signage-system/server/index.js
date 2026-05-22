@@ -61,6 +61,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ─── 단축 플레이어 URL (/tv-a, /tv-b, /kiosk 등) ──────────────
+app.get('/tv-:deviceId', (req, res) => {
+  res.redirect(`/player?device=tv-${req.params.deviceId}`);
+});
+app.get('/kiosk', (req, res) => {
+  res.redirect('/player?device=kiosk');
+});
+// 디바이스 목록 기반 동적 단축 URL
+app.get('/play/:deviceId', (req, res) => {
+  res.redirect(`/player?device=${req.params.deviceId}`);
+});
+
 // Socket.io 연결 관리
 const connectedDevices = new Map();
 

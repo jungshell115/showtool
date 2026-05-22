@@ -309,9 +309,9 @@ function createTray() {
     if (localIPs.length === 0) return [{ label: 'IP 주소를 찾을 수 없음', enabled: false }];
     const ip = localIPs[0];
     return [
-      { label: `TV-A:    http://${ip}:4000/player?device=tv-a`,    click: () => clipboard.writeText(`http://${ip}:4000/player?device=tv-a`) },
-      { label: `TV-B:    http://${ip}:4000/player?device=tv-b`,    click: () => clipboard.writeText(`http://${ip}:4000/player?device=tv-b`) },
-      { label: `키오스크: http://${ip}:4000/player?device=kiosk`, click: () => clipboard.writeText(`http://${ip}:4000/player?device=kiosk`) },
+      { label: `TV-A:    http://${ip}:4000/tv-a`,    click: () => clipboard.writeText(`http://${ip}:4000/tv-a`) },
+      { label: `TV-B:    http://${ip}:4000/tv-b`,    click: () => clipboard.writeText(`http://${ip}:4000/tv-b`) },
+      { label: `키오스크: http://${ip}:4000/kiosk`, click: () => clipboard.writeText(`http://${ip}:4000/kiosk`) },
     ];
   }
 
