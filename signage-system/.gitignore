@@ -1,5 +1,4 @@
 node_modules/
-dist/
 *.db
 *.db-shm
 *.db-wal
@@ -11,6 +10,5 @@ server/uploads/*
 # Electron 빌드 결과물
 dist-desktop/
 
-# 클라이언트/플레이어 빌드 캐시
+# 클라이언트 빌드 캐시
 client/dist/
-player/dist/
